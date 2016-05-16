@@ -85,20 +85,30 @@ describe OpenToken do
       let(:decoded) { OpenToken.decode(encoded) }
 
       context "using #{cipher_name}" do
-        context 'many different characters' do
-          let(:attributes_in) { { 'abcdefghijklmnopqrstuvwxyz1234567890' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', '0987654321ZYXWVUTSRQPONMLKJIHGFEDCBA' => '0987654321zyxwvutsrqponmlkjihgfedcba' } }
+        context 'a large payload' do
+          let(:chars) { ('A'..'z').to_a }
+
+          def random_chars(n)
+            n.times.map { chars.sample }.join
+          end
+
+          def huge_attrs(key_value_pairs, chars_per)
+            keys = key_value_pairs.times.map { random_chars(chars_per) }
+            values = key_value_pairs.times.map { random_chars(chars_per) }
+            Hash[keys.zip(values)]
+          end
+
+          let(:attributes_in) { huge_attrs(100, 100) }
           it { expect(decoded).to eq attributes_in }
         end
 
-        context 'many repeated characters' do
-          let(:attributes_in) { { 'a' * 1000 => 'b' * 1000 } }
+        context 'a medium payload' do
+          let(:attributes_in) { { 'abcdefghijklmnopqrstuvwxyz1234567890' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', '0987654321ZYXWVUTSRQPONMLKJIHGFEDCBA' => '0987654321zyxwvutsrqponmlkjihgfedcba' } }
           it { expect(decoded).to eq attributes_in }
         end
 
         context "with non-ascii utf-8 values" do
           let(:attributes_in) { { "subject" => "André", "email" => "john@example.com" } }
-
-
           it { expect(decoded).to eq attributes_in }
         end
       end

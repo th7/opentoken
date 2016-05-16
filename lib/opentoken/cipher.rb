@@ -46,7 +46,7 @@ module OpenToken
       else
         iv_length - (payload.length % iv_length)
       end
-      c.update(payload + (padding.chr * padding))
+      c.update(payload + (padding.chr * padding)) + c.final
     end
 
     private
