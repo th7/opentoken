@@ -22,14 +22,17 @@ describe OpenToken do
           end
           result
         end
+
         it "decrypts subject from token payload" do
-          token[:subject].should == 'john@example.com'
+          expect(token[:subject]).to eq 'john@example.com'
         end
+
         it "decrypts subject using string or symbol" do
-          token['subject'].should == 'john@example.com'
+          expect(token['subject']).to eq 'john@example.com'
         end
+
         it "parses 'renew-until' date" do
-          token.valid_until.should == Time.iso8601('2010-03-05T07:19:15Z')
+          expect(token.valid_until).to eq Time.iso8601('2010-03-05T07:19:15Z')
         end
       end
       context "when current time is outside clock skew tolerance before expiration date" do
@@ -56,8 +59,9 @@ describe OpenToken do
         end
         result
       end
+
       it "preserves the apostrophe" do
-        token[:last_name].should == "D'angelo"
+        expect(token[:last_name]).to eq "D'angelo"
       end
     end
 
@@ -70,16 +74,35 @@ describe OpenToken do
   describe ".encode" do
     before { OpenToken.password = 'Password1' }
 
-    context "with aes-128-cbc and subject attribute" do
-      let(:attributes_in) { { "subject" => "john", "email" => "john@example.com" } }
-      let(:token) { OpenToken.encode attributes_in, OpenToken::Cipher::AES_128_CBC }
-      it { OpenToken.decode(token).should == attributes_in }
+    ciphers = {
+      aes_128_cbc: OpenToken::Cipher::AES_128_CBC,
+      aes_256_cbc: OpenToken::Cipher::AES_256_CBC,
+      des_168_cbc: OpenToken::Cipher::DES3_168_CBC,
+    }
+
+    ciphers.each do |cipher_name, cipher|
+      let(:encoded) { OpenToken.encode(attributes_in, cipher) }
+      let(:decoded) { OpenToken.decode(encoded) }
+
+      context "using #{cipher_name}" do
+        context 'many different characters' do
+          let(:attributes_in) { { 'abcdefghijklmnopqrstuvwxyz1234567890' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', '0987654321ZYXWVUTSRQPONMLKJIHGFEDCBA' => '0987654321zyxwvutsrqponmlkjihgfedcba' } }
+          it { expect(decoded).to eq attributes_in }
+        end
+
+        context 'many repeated characters' do
+          let(:attributes_in) { { 'a' * 1000 => 'b' * 1000 } }
+          it { expect(decoded).to eq attributes_in }
+        end
+
+        context "with non-ascii utf-8 values" do
+          let(:attributes_in) { { "subject" => "André", "email" => "john@example.com" } }
+
+
+          it { expect(decoded).to eq attributes_in }
+        end
+      end
     end
 
-    context "with non-ascii utf-8 values" do
-      let(:attributes_in) { { "subject" => "André", "email" => "john@example.com" } }
-      let(:token) { OpenToken.encode attributes_in, OpenToken::Cipher::AES_128_CBC }
-      it { OpenToken.decode(token).should == attributes_in }
-    end
   end
 end

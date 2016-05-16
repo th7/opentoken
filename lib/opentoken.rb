@@ -166,9 +166,9 @@ module OpenToken
       return unless debug?
       puts "#{header}:"
       index = 0
-      string.each_byte do |b| 
-        puts "#{index}: #{b} => #{b.chr}" 
-        index += 1 
+      string.each_byte do |b|
+        puts "#{index}: #{b} => #{b.chr}"
+        index += 1
       end
     end
     def force_encoding(string, encoding)

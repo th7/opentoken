@@ -15,6 +15,7 @@ module OpenToken
       @key_length = attrs[:key_length]
       @algorithm = attrs[:algorithm]
     end
+
     def self.for_suite(cipher_suite)
       cipher = REGISTERED_CIPHERS.detect {|c| c.suite == cipher_suite }
       raise InvalidCipherError.new("Unknown cipher suite: #{cipher_suite}") unless cipher
@@ -24,6 +25,7 @@ module OpenToken
     def generate_key
       OpenToken::PasswordKeyGenerator.generate OpenToken.password, self
     end
+
     def generate_iv
       OpenSSL::Random.random_bytes(iv_length)
     end
@@ -36,6 +38,7 @@ module OpenToken
       c = crypt :decrypt, key, iv
       c.update(encrypted_payload) + c.final
     end
+
     def encrypt_payload(payload, key, iv)
       c = crypt :encrypt, key, iv
       padding = if payload.length % iv_length == 0
@@ -47,10 +50,11 @@ module OpenToken
     end
 
     private
+
     def crypt(operation, key, iv)
       crypt = OpenSSL::Cipher::Cipher.new(algorithm)
       crypt.send operation
-      crypt.key = key 
+      crypt.key = key
       crypt.iv = iv
       crypt
     end
